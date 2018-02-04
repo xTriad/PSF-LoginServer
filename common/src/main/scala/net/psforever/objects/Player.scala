@@ -73,7 +73,7 @@ class Player(private val name : String,
   //SouNourS things
   /** Last medkituse. */
   var lastMedkit : Long = 0
-  var death_by : Int = 0
+  var deathBy : Option[PlanetSideGUID] = None
   var lastSeenStreamMessage : Array[Long] = Array.fill[Long](65535)(0L)
   var lastShotSeq_time : Int = -1
   /** The player is shooting. */
@@ -554,6 +554,13 @@ class Player(private val name : String,
   }
 
   def Definition : AvatarDefinition = playerDef
+
+  def DeathBy : Option[PlanetSideGUID] = deathBy
+
+  def DeathBy_=(guid : Option[PlanetSideGUID]) : Option[PlanetSideGUID] = {
+    deathBy = guid
+    DeathBy
+  }
 
   override def toString : String = {
     Player.toString(this)

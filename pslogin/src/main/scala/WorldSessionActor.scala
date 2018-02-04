@@ -288,6 +288,19 @@ class WorldSessionActor extends Actor with MDCContextAware {
             sendResponse(PacketCoding.CreateGamePacket(0, WeaponDryFireMessage(weapon_guid)))
           }
 
+        case AvatarResponse.LoadMap(player_guid) =>
+          log.info("-----LOAD_MAP-------")
+          if(player.GUID != guid) {
+            //sendResponse(PacketCoding.CreateGamePacket(0, LoadMapMessage(player_guid)))
+            //sendResponse(PacketCoding.CreateGamePacket(0, ObjectCreateMessage(player_guid)))
+          }
+
+        case AvatarResponse.UnloadMap(player_guid) =>
+          log.info("-----UNLOAD_MAP-------")
+          if(player.GUID != guid) {
+            sendResponse(PacketCoding.CreateGamePacket(0, ObjectDeleteMessage(player.GUID, 4)))
+          }
+
         case _ => ;
       }
 
@@ -1424,6 +1437,30 @@ class WorldSessionActor extends Actor with MDCContextAware {
     case msg @ ProjectileStateMessage(projectile_guid, shot_pos, shot_vector, unk1, unk2, unk3, unk4, time_alive) =>
       //log.info("ProjectileState: " + msg)
 
+    // Player selected a spawn location on the respawn map
+    case msg @ SpawnRequestMessage(u1, ux2, u3, u4, u5) =>
+      log.info("ID: " + sessionId + " / " + player.Name + " (" + player.Faction + ") " + player.Continent + "-" + player.Position.x + "/" + player.Position.y + "/" + player.Position.z + " " + msg)
+
+      // Show the respawning loading screen
+      sendResponse(PacketCoding.CreateGamePacket(0, AvatarDeadStateMessage(RespawnState.Respawning.id, 1000, 1000, player.Position, 0, true)))
+
+      // Delete character object? Should this happen earlier?
+      avatarService ! AvatarAction.UnloadMap(player.GUID)
+
+      // Let the progress bar do its thing
+      Thread.sleep(1000) // TODO: Schedule event...
+
+      player.Spawn
+      player.Position = Vector3(1882.4766f, 2040.6406f, 101.484375f) // TODO: Get position of spawn location
+
+      // Create character object?
+      avatarService ! AvatarAction.LoadMap(player.GUID)
+
+      // Send the player's client back into player mode
+      sendResponse(PacketCoding.CreateGamePacket(0, AvatarDeadStateMessage(RespawnState.Spawned.id, 0, 0, player.Position, 0, true)))
+
+    // TODO: Broadcast to observing clients the player's new character
+
     case msg @ ChatMsg(messagetype, has_wide_contents, recipient, contents, note_contents) =>
       // TODO: Prevents log spam, but should be handled correctly
       if (messagetype != ChatMessageType.CMT_TOGGLE_GM) {
@@ -1432,6 +1469,28 @@ class WorldSessionActor extends Actor with MDCContextAware {
 
       if (messagetype == ChatMessageType.CMT_VOICE) {
         sendResponse(PacketCoding.CreateGamePacket(0, ChatMsg(ChatMessageType.CMT_VOICE, false, "IlllIIIlllIlIllIlllIllI", contents, None)))
+      }
+
+      if (messagetype == ChatMessageType.CMT_SUICIDE) {
+        player.Die
+        player.DeathBy = Some(player.GUID)
+
+        // Trigger the death animation to the client
+        sendResponse(PacketCoding.CreateGamePacket(0, PlanetsideAttributeMessage(player.GUID, 0, 0)))
+        sendResponse(PacketCoding.CreateGamePacket(0, PlanetsideAttributeMessage(player.GUID, 4, 0)))
+
+        // Trigger the death animation to the observing clients
+        avatarService ! AvatarServiceMessage(continent.Id, AvatarAction.PlanetsideAttribute(player.GUID, 0, 0)) // Health = 0
+        avatarService ! AvatarServiceMessage(continent.Id, AvatarAction.PlanetsideAttribute(player.GUID, 4, 0)) // Armor = 0
+
+        // Give time for the death animation to play out
+        Thread.sleep(3000) // TODO schedule event...
+
+        // Send the player from watching their dead body to the respawn screen
+        sendResponse(PacketCoding.CreateGamePacket(0, AvatarDeadStateMessage(RespawnState.RespawnScreen.id, 0, 0, player.Position, 0, true)))
+
+        // Show a backpack for watching clients so they know the player clicked through to respawn
+        avatarService ! AvatarServiceMessage(continent.Id, AvatarAction.PlanetsideAttribute(player.GUID, 6, 1)) // Respawn
       }
 
       // TODO: handle this appropriately
@@ -2229,6 +2288,15 @@ class WorldSessionActor extends Actor with MDCContextAware {
 
     case msg @ HitHint(source, player_guid) =>
       log.info("HitHint: "+msg)
+
+    case msg @ ReleaseAvatarRequestMessage() =>
+      //val playerOpt: Option[PlayerAvatar] = PlayerMasterList.getPlayer(sessionId)
+      //if (playerOpt.isDefined) {
+      //  val player: PlayerAvatar = playerOpt.get
+      log.info("ID: " + sessionId + " / " + player.Name + " (" + player.Faction + ") " + player.Continent + "-" + player.Position.x + "/" + player.Position.y + "/" + player.Position.z + " " + msg)
+      sendResponse(PacketCoding.CreateGamePacket(0, AvatarDeadStateMessage(2,0,0,player.Position,0,true)))
+      avatarService ! AvatarServiceMessage(player.Continent, AvatarAction.PlanetsideAttribute(player.GUID, 6, 1))
+    //}
 
     case msg @ TargetingImplantRequest(list) =>
       log.info("TargetingImplantRequest: "+msg)

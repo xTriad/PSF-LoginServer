@@ -18,8 +18,8 @@ object AvatarResponse {
   final case class EquipmentInHand(slot : Int, item : Equipment) extends Response
   final case class EquipmentOnGround(pos : Vector3, orient : Vector3, item_id : Int, item_guid : PlanetSideGUID, item_data : ConstructorData) extends Response
   final case class LoadPlayer(pdata : ConstructorData) extends Response
-  //  final case class unLoadMap() extends Response
-  //  final case class LoadMap() extends Response
+  final case class UnloadMap(player_guid : PlanetSideGUID) extends Response
+  final case class LoadMap(player_guid : PlanetSideGUID) extends Response
   final case class ObjectDelete(item_guid : PlanetSideGUID, unk : Int) extends Response
   final case class ObjectHeld(slot : Int) extends Response
   final case class PlanetsideAttribute(attribute_type : Int, attribute_value : Long) extends Response

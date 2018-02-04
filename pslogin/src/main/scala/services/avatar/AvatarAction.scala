@@ -18,8 +18,8 @@ object AvatarAction {
   final case class EquipmentInHand(player_guid : PlanetSideGUID, slot : Int, item : Equipment) extends Action
   final case class EquipmentOnGround(player_guid : PlanetSideGUID, pos : Vector3, orient : Vector3, item_id : Int, item_guid : PlanetSideGUID, item_data : ConstructorData) extends Action
   final case class LoadPlayer(player_guid : PlanetSideGUID, pdata : ConstructorData) extends Action
-//  final case class LoadMap(msg : PlanetSideGUID) extends Action
-//  final case class unLoadMap(msg : PlanetSideGUID) extends Action
+  final case class LoadMap(msg : PlanetSideGUID) extends Action
+  final case class UnloadMap(msg : PlanetSideGUID) extends Action
   final case class ObjectDelete(player_guid : PlanetSideGUID, item_guid : PlanetSideGUID, unk : Int = 0) extends Action
   final case class ObjectHeld(player_guid : PlanetSideGUID, slot : Int) extends Action
   final case class PlanetsideAttribute(player_guid : PlanetSideGUID, attribute_type : Int, attribute_value : Long) extends Action

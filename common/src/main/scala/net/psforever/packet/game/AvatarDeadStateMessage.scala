@@ -7,6 +7,18 @@ import scodec.Codec
 import scodec.codecs._
 
 /**
+  * An `Enumeration` of the stages of a player's respawning process.
+  */
+object RespawnState extends Enumeration {
+  val
+  Spawned,                 // User is spawned and alive?
+  WaitingForRespawnScreen, // User is watching their dead body and can click button or wait for timer
+  RespawnScreen,           // Respawn screen where user can select where to spawn
+  Respawning               // Loading screen after user clicked where to spawn
+  = Value
+}
+
+/**
   * na
   * @param unk1 0 = nothing, 1 = waiting for a rez, 2 = auto map to select spawn, 3 = respawn time
   * @param unk2 na
